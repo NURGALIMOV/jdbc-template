@@ -48,10 +48,6 @@ public interface JdbcTemplate {
     }
 
     private static <T> T execute(DataSource ds, String sql, Object[] args, Executor<T> executor) {
-        if (Objects.nonNull(args) && (args.length != 0) && (args[0].getClass()
-                .isArray())) {
-            args = (Object[]) args[0];
-        }
         try (final var conn = ds.getConnection();
              final var stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
