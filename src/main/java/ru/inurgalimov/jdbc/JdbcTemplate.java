@@ -5,7 +5,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 
 public interface JdbcTemplate {
@@ -26,8 +25,7 @@ public interface JdbcTemplate {
         return Optional.ofNullable(execute(ds, sql, args, stmt -> {
             stmt.execute();
             ResultSet rs = stmt.getResultSet();
-            rs.next();
-            return rowMapper.mapRow(rs);
+            return rs.next() ? rowMapper.mapRow(rs) : null;
         }));
     }
 
@@ -42,8 +40,7 @@ public interface JdbcTemplate {
         return execute(ds, sql, args, stmt -> {
             stmt.execute();
             ResultSet rs = stmt.getResultSet();
-            rs.next();
-            return rowMapper.mapRow(rs);
+            return rs.next() ? rowMapper.mapRow(rs) : null;
         });
     }
 
