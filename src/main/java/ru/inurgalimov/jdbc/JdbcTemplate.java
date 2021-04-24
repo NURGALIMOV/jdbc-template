@@ -1,46 +1,41 @@
 package ru.inurgalimov.jdbc;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 public interface JdbcTemplate {
 
     static <T> List<T> query(DataSource ds, String sql, RowMapper<T> rowMapper, Object... args) {
-        return execute(ds, sql, args, stmt -> {
+        return (List<T>) execute(ds, sql, args, stmt -> {
             try (final var rs = stmt.executeQuery()) {
-                List<T> result = new ArrayList<>();
-                while (rs.next()) {
-                    result.add(rowMapper.mapRow(rs));
+                if (Objects.nonNull(rs)) {
+                    final var result = new ArrayList<>();
+                    while (rs.next()) {
+                        result.add(rowMapper.mapRow(rs));
+                    }
+                    return result;
+                } else {
+                    return Collections.<T>emptyList();
                 }
-                return result;
             }
         });
     }
 
-    static <T> Optional<T> querySingle(DataSource ds, String sql, RowMapper<T> rowMapper, Object... args) {
-        return Optional.ofNullable(execute(ds, sql, args, stmt -> {
-            stmt.execute();
-            ResultSet rs = stmt.getResultSet();
-            return rs.next() ? rowMapper.mapRow(rs) : null;
-        }));
+    static <T> Optional<T> querySingleForOptional(DataSource ds, String sql, RowMapper<T> rowMapper,
+                                                  Object... args) {
+        return Optional.ofNullable(querySingle(ds, sql, rowMapper, args));
     }
 
-    static void queryWithoutReturning(DataSource ds, String sql, Object... args) {
-        execute(ds, sql, args, stmt -> {
-            stmt.execute();
-            return null;
-        });
-    }
-
-    static <T> T queryWithReturning(DataSource ds, String sql, RowMapper<T> rowMapper, Object... args) {
+    static <T> T querySingle(DataSource ds, String sql, RowMapper<T> rowMapper, Object... args) {
         return execute(ds, sql, args, stmt -> {
             stmt.execute();
-            ResultSet rs = stmt.getResultSet();
-            return rs.next() ? rowMapper.mapRow(rs) : null;
+            try (final var rs = stmt.getResultSet()) {
+                if (Objects.nonNull(rs)) {
+                    return rs.next() ? rowMapper.mapRow(rs) : null;
+                }
+                return null;
+            }
         });
     }
 
@@ -48,7 +43,7 @@ public interface JdbcTemplate {
         try (final var conn = ds.getConnection();
              final var stmt = conn.prepareStatement(sql)) {
             for (int i = 0; i < args.length; i++) {
-                Object arg = args[i];
+                final var arg = args[i];
                 stmt.setObject(i + 1, arg);
             }
             return executor.execute(stmt);
