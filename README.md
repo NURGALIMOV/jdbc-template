@@ -1,2 +1,2 @@
-# spring-mvc-configuration
-Studying Spring MVC configuration
+# spring-jdbc-template
+Studying JDBC template
